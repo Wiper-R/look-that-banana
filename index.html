@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        cursor: none;
+        height: 100%;
+        overflow: hidden;
+        position: relative;
+      }
+      .minion {
+        height: 100%;
+        width: 100%;
+        object-fit: contain;
+      }
+
+      .eyeballs {
+        position: absolute;
+        top: calc(var(--top) * 1px);
+        z-index: 10;
+        display: flex;
+        gap: calc(var(--gap) * 1px);
+      }
+
+      .eyeball {
+        transition: all 0.1s linear;
+        overflow: hidden;
+        position: relative;
+        /* background: #ff000042; */
+        border-radius: 100%;
+        width: calc(var(--radius) * 2px);
+        height: calc(var(--radius) * 1.7px);
+      }
+
+      .main {
+        position: relative;
+        justify-content: center;
+        height: 100%;
+        display: flex;
+      }
+
+      .pupil {
+        position: absolute;
+      }
+
+      .banana {
+        top: 0px;
+        position: absolute;
+        width: calc(var(--width) * 1px);
+        z-index: 1000;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="main">
+      <img class="minion" src="./assets/minions-edited.png" />
+      <div class="eyeballs">
+        <div class="eyeball">
+          <img src="./assets/eye.png" alt="" class="pupil" />
+        </div>
+        <div class="eyeball">
+          <img src="./assets/eye.png" alt="" class="pupil" />
+        </div>
+      </div>
+      <img class="banana" src="assets/banana.webp" />
+    </div>
+  </body>
+  <script>
+    const ORIGINAL_SIZE = {
+      x: 850,
+      y: 950,
+    };
+    const BANANA_WIDTH = 300;
+    const EYEBALLS_TOP_OFFSET = 216;
+    const EYEBALLS_OFFSET = 28;
+
+    function calculateScale() {
+      const img = document.querySelector(".minion");
+      const scale = Math.min(
+        document.body.clientWidth / ORIGINAL_SIZE.x,
+        document.body.clientHeight / ORIGINAL_SIZE.y
+      );
+      return {
+        x: document.body.clientWidth / ORIGINAL_SIZE.x,
+        y: document.body.clientHeight / ORIGINAL_SIZE.y,
+      };
+    }
+
+    function calculateMinScale() {
+      const scale = calculateScale();
+      return Math.min(scale.x, scale.y);
+    }
+
+    const eyeballs = document.querySelector(".eyeballs");
+    const banana = document.querySelector(".banana");
+    const minScale = calculateMinScale();
+    eyeballs.style.setProperty("--radius", 70 * minScale);
+    eyeballs.style.setProperty(
+      "--top",
+      document.body.clientHeight / 2 -
+        (ORIGINAL_SIZE.y * calculateMinScale()) / 2 +
+        EYEBALLS_TOP_OFFSET * calculateMinScale()
+    );
+    eyeballs.style.setProperty("--gap", EYEBALLS_OFFSET * minScale);
+    banana.style.setProperty("--width", BANANA_WIDTH * minScale);
+    eyeballs.querySelectorAll(".pupil").forEach((pupil) => {
+      pupil.style.width = 46 * calculateMinScale() + "px";
+    });
+    window.addEventListener("resize", (e) => {
+      const minScale = calculateMinScale();
+      eyeballs.style.setProperty("--radius", 70 * minScale);
+      eyeballs.style.setProperty("--gap", EYEBALLS_OFFSET * minScale);
+      eyeballs.style.setProperty(
+        "--top",
+        document.body.clientHeight / 2 -
+          (ORIGINAL_SIZE.y * calculateMinScale()) / 2 +
+          EYEBALLS_TOP_OFFSET * calculateMinScale()
+      );
+      eyeballs.querySelectorAll(".pupil").forEach((pupil) => {
+        pupil.style.width = 46 * calculateMinScale() + "px";
+      });
+      banana.style.setProperty("--width", BANANA_WIDTH * minScale);
+    });
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    window.addEventListener("mousemove", (e) => {
+      console.log("mouse moving");
+      eyeballs.querySelectorAll(".eyeball").forEach((eyeball) => {
+        const eyeballRect = eyeball.getBoundingClientRect();
+        const pupil = eyeball.querySelector(".pupil");
+        if (!pupil) return;
+
+        // Calculate the center of the eyeball
+        const eyeballCenterX = eyeballRect.left + eyeballRect.width / 2;
+        const eyeballCenterY = eyeballRect.top + eyeballRect.height / 2;
+
+        // Calculate the maximum distance the pupil can move from the center
+        const maxDistanceX =
+          eyeballRect.width / 2 - parseFloat(getComputedStyle(pupil).width) / 2;
+        const maxDistanceY =
+          eyeballRect.height / 2 +
+          parseFloat(getComputedStyle(pupil).height) / 2;
+
+        // Calculate the distance the mouse is from the center of the eyeball
+        const mouseXFromCenter = e.clientX - eyeballCenterX;
+        const mouseYFromCenter = e.clientY - eyeballCenterY;
+
+        // Calculate the position of the pupil within the bounds of the eyeball
+        const positionX = clamp(
+          mouseXFromCenter,
+          -maxDistanceX + parseFloat(getComputedStyle(pupil).width),
+          maxDistanceX + parseFloat(getComputedStyle(pupil).width)
+        );
+        const positionY = clamp(
+          mouseYFromCenter,
+          -maxDistanceY + parseFloat(getComputedStyle(pupil).height) * 2,
+          maxDistanceY
+        );
+
+        // Set the position of the pupil
+        pupil.style.left = positionX + "px";
+        pupil.style.top = positionY + "px";
+      });
+      console.log(getComputedStyle(banana).width);
+      banana.style.left =
+        e.clientX - parseFloat(getComputedStyle(banana).width) / 2 + "px";
+      banana.style.top =
+        e.clientY - parseFloat(getComputedStyle(banana).height) / 2 + "px";
+    });
+  </script>
+</html>
